@@ -42,6 +42,15 @@ pub fn execute_statement(
             }
             runtime.variables.insert(name, value);
         }
+        Statement::AssertEq { left, right } => {
+            let left = runtime.get_value(left)?;
+            let right = runtime.get_value(right)?;
+            return if left != right {
+                Err(errors::RuntimeError::AssertEqFailed { left, right })
+            } else {
+                Ok(())
+            };
+        }
         _ => todo!(),
     }
 
@@ -132,6 +141,36 @@ pub fn execute_expression(
                 deployment_result: result,
             })
         }
+        Expression::GetCode { address } => {
+            let value = runtime.get_value(address)?;
+            let address = match value {
+                Value::Contract { contract, .. } => contract.address,
+                Value::SigningAccount(signer) => signer.address(),
+                Value::Bytes(bytes) => Address::try_from_slice(&bytes)
+                    .map_err(|_| errors::TokenParseError::InvalidAddress)?,
+                other => {
+                    return Err(errors::RuntimeError::TypeMismatch {
+                        expected: ValueType::Bytes,
+                        received: other.typ(),
+                    });
+                }
+            };
+            let bytes = runtime.vm.getter_method_call("get_code", address)?;
+            Ok(Value::Bytes(bytes))
+        }
+        Expression::Primitive(primitive) => match primitive {
+            program::Primitive::Bool(x) => Ok(Value::Bool(x)),
+            program::Primitive::String(x) => Ok(Value::String(x)),
+            program::Primitive::U256(x) => {
+                let number = parse_u256(&x)?;
+                Ok(Value::U256(number))
+            }
+            program::Primitive::Bytes(x) => {
+                let bytes = x.try_to_bytes()?;
+                Ok(Value::Bytes(bytes))
+            }
+            program::Primitive::Variable(v) => runtime.get_value(v),
+        },
         _ => todo!(),
     }
 }
@@ -144,6 +183,16 @@ fn parse_u256(hex_str: &HexString) -> Result<U256, hex::FromHexError> {
 pub struct Runtime {
     pub vm: VM,
     pub variables: HashMap<String, Value>,
+}
+
+impl Runtime {
+    pub fn get_value(&self, v: Variable) -> Result<Value, errors::RuntimeError> {
+        let value = self
+            .variables
+            .get(&v.0)
+            .ok_or(errors::RuntimeError::UnknownVariable(v))?;
+        Ok(value.clone())
+    }
 }
 
 impl Runtime {
@@ -171,7 +220,7 @@ fn get_mut_signer(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     SigningAccount(Signer),
     Contract {
@@ -179,6 +228,10 @@ pub enum Value {
         deployment_near_gas_used: u64,
         deployment_result: SubmitResult,
     },
+    U256(U256),
+    Bytes(Vec<u8>),
+    String(String),
+    Bool(bool),
 }
 
 impl Value {
@@ -186,6 +239,10 @@ impl Value {
         match self {
             Self::SigningAccount(_) => ValueType::SigningAccount,
             Self::Contract { .. } => ValueType::DeployedContract,
+            Self::U256(_) => ValueType::U256,
+            Self::Bytes(_) => ValueType::Bytes,
+            Self::String(_) => ValueType::String,
+            Self::Bool(_) => ValueType::Bool,
         }
     }
 }
@@ -194,9 +251,13 @@ impl Value {
 pub enum ValueType {
     SigningAccount,
     DeployedContract,
+    U256,
+    Bytes,
+    String,
+    Bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Signer {
     pub nonce: u64,
     pub secret_key: SecretKey,
@@ -398,6 +459,46 @@ impl VM {
         }
 
         (maybe_outcome, maybe_error)
+    }
+
+    pub fn view_call(
+        &self,
+        method_name: &str,
+        input: Vec<u8>,
+    ) -> (Option<VMOutcome>, Option<VMError>) {
+        let mut context = self.context.clone();
+        let mut ext = self.ext.clone();
+
+        Self::update_context(
+            &mut context,
+            &self.aurora_account_id,
+            &self.aurora_account_id,
+            input,
+        );
+
+        near_vm_runner::run(
+            &self.code,
+            method_name,
+            &mut ext,
+            context,
+            &self.wasm_config,
+            &self.fees_config,
+            &[],
+            self.current_protocol_version,
+            Some(&self.cache),
+        )
+    }
+
+    pub fn getter_method_call(
+        &self,
+        method_name: &str,
+        address: Address,
+    ) -> Result<Vec<u8>, errors::RuntimeError> {
+        let (outcome, maybe_error) = self.view_call(method_name, address.as_bytes().to_vec());
+        if let Some(err) = maybe_error {
+            return Err(err.into());
+        }
+        Ok(outcome.unwrap().return_data.as_value().unwrap())
     }
 
     pub fn submit_transaction_profiled(

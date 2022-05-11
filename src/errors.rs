@@ -2,7 +2,7 @@ use aurora_engine::parameters::TransactionStatus;
 use near_vm_runner::VMError;
 
 use crate::program::Variable;
-use crate::runtime::ValueType;
+use crate::runtime::{Value, ValueType};
 
 #[derive(Debug)]
 pub enum TokenParseError {
@@ -30,6 +30,10 @@ pub enum RuntimeError {
     ContractParseError(ContractParseError),
     VMError(VMError),
     EVMExecutionFailed(TransactionStatus),
+    AssertEqFailed {
+        left: Value,
+        right: Value,
+    },
 }
 
 impl From<hex::FromHexError> for TokenParseError {

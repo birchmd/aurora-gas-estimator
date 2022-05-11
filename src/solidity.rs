@@ -11,7 +11,7 @@ pub struct ContractConstructor {
     pub code: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DeployedContract {
     pub abi: ethabi::Contract,
     pub address: Address,

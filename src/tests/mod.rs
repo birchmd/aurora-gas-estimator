@@ -25,6 +25,20 @@ fn test_deploy_contract() {
                 value: None,
             },
         },
+        Statement::Assign {
+            name: "expected_bytes".into(),
+            expression: Expression::Primitive(Primitive::Bytes("0x00".into())),
+        },
+        Statement::Assign {
+            name: "actual_bytes".into(),
+            expression: Expression::GetCode {
+                address: "my_contract".into(),
+            },
+        },
+        Statement::AssertEq {
+            left: "expected_bytes".into(),
+            right: "actual_bytes".into(),
+        },
     ];
 
     runtime::execute(Program { statements }).unwrap();

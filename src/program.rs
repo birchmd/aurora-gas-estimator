@@ -54,6 +54,9 @@ pub enum Expression {
     GetCode {
         address: Variable,
     },
+    GetOutput {
+        contract_call: Variable,
+    },
     Primitive(Primitive),
 }
 
@@ -66,7 +69,7 @@ pub enum Primitive {
     Bool(bool),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Variable(pub String);
 

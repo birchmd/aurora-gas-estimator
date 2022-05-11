@@ -1,4 +1,4 @@
-use crate::program::{self, Expression, HexString, Program, Statement, Variable};
+use crate::program::{self, CallContractData, Expression, HexString, Program, Statement, Variable};
 use crate::{errors, mocked_external, solidity};
 use aurora_engine::fungible_token::{FungibleToken, FungibleTokenMetadata};
 use aurora_engine::parameters::SubmitResult;
@@ -46,7 +46,10 @@ pub fn execute_statement(
             let left = runtime.get_value(left)?;
             let right = runtime.get_value(right)?;
             return if left != right {
-                Err(errors::RuntimeError::AssertEqFailed { left, right })
+                Err(errors::RuntimeError::AssertEqFailed {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                })
             } else {
                 Ok(())
             };
@@ -141,6 +144,60 @@ pub fn execute_expression(
                 deployment_result: result,
             })
         }
+        Expression::CallContract {
+            contract,
+            signing_account,
+            data,
+            value,
+        } => {
+            let nonce = {
+                let value = get_mut_signer(&mut runtime.variables, signing_account.clone())?;
+                U256::from(value.use_nonce())
+            };
+            let value = match value {
+                None => U256::zero(),
+                Some(value_hex) => parse_u256(&value_hex)?,
+            };
+            let transaction = {
+                let contract = get_contract(&runtime.variables, contract)?;
+                let mut tx_template = TransactionLegacy {
+                    nonce,
+                    gas_price: U256::zero(),
+                    gas_limit: u64::MAX.into(),
+                    to: Some(contract.address),
+                    value: Wei::new(value),
+                    data: Vec::new(),
+                };
+                match data {
+                    None => tx_template,
+                    Some(data) => match data {
+                        CallContractData::Raw(data_hex) => {
+                            tx_template.data = data_hex.try_to_bytes()?;
+                            tx_template
+                        }
+                        CallContractData::SolidityMethod { name, args } => match args {
+                            None => contract.call_method_without_args(&name, nonce),
+                            Some(args) => {
+                                let mut abi_args = Vec::new();
+                                for arg in args {
+                                    abi_args.push(arg.try_into()?)
+                                }
+                                contract.call_method_with_args(&name, &abi_args, nonce)
+                            }
+                        },
+                    },
+                }
+            };
+            let signer = get_mut_signer(&mut runtime.variables, signing_account)?;
+            let (result, profile) = runtime
+                .vm
+                .submit_transaction_profiled(&signer.secret_key, transaction)?;
+
+            Ok(Value::ContractCallResult {
+                near_gas_used: profile.all_gas(),
+                result,
+            })
+        }
         Expression::GetCode { address } => {
             let value = runtime.get_value(address)?;
             let address = match value {
@@ -157,6 +214,21 @@ pub fn execute_expression(
             };
             let bytes = runtime.vm.getter_method_call("get_code", address)?;
             Ok(Value::Bytes(bytes))
+        }
+        Expression::GetOutput { contract_call } => {
+            let value = runtime.get_value(contract_call)?;
+            match value {
+                Value::ContractCallResult { result, .. } => match result.status {
+                    aurora_engine::parameters::TransactionStatus::Succeed(bytes) => {
+                        Ok(Value::Bytes(bytes))
+                    }
+                    other => Err(errors::RuntimeError::EVMExecutionFailed(other)),
+                },
+                other => Err(errors::RuntimeError::TypeMismatch {
+                    expected: ValueType::ContractCallResult,
+                    received: other.typ(),
+                }),
+            }
         }
         Expression::Primitive(primitive) => match primitive {
             program::Primitive::Bool(x) => Ok(Value::Bool(x)),
@@ -220,6 +292,22 @@ fn get_mut_signer(
     }
 }
 
+fn get_contract(
+    variables: &HashMap<String, Value>,
+    var: Variable,
+) -> Result<&solidity::DeployedContract, errors::RuntimeError> {
+    let value = variables
+        .get(&var.0)
+        .ok_or(errors::RuntimeError::UnknownVariable(var))?;
+    match value {
+        Value::Contract { contract, .. } => Ok(contract),
+        other => Err(errors::RuntimeError::TypeMismatch {
+            expected: ValueType::DeployedContract,
+            received: other.typ(),
+        }),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     SigningAccount(Signer),
@@ -227,6 +315,10 @@ pub enum Value {
         contract: solidity::DeployedContract,
         deployment_near_gas_used: u64,
         deployment_result: SubmitResult,
+    },
+    ContractCallResult {
+        near_gas_used: u64,
+        result: SubmitResult,
     },
     U256(U256),
     Bytes(Vec<u8>),
@@ -239,6 +331,7 @@ impl Value {
         match self {
             Self::SigningAccount(_) => ValueType::SigningAccount,
             Self::Contract { .. } => ValueType::DeployedContract,
+            Self::ContractCallResult { .. } => ValueType::ContractCallResult,
             Self::U256(_) => ValueType::U256,
             Self::Bytes(_) => ValueType::Bytes,
             Self::String(_) => ValueType::String,
@@ -251,6 +344,7 @@ impl Value {
 pub enum ValueType {
     SigningAccount,
     DeployedContract,
+    ContractCallResult,
     U256,
     Bytes,
     String,

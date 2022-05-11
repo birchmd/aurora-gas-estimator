@@ -31,8 +31,8 @@ pub enum RuntimeError {
     VMError(VMError),
     EVMExecutionFailed(TransactionStatus),
     AssertEqFailed {
-        left: Value,
-        right: Value,
+        left: Box<Value>,
+        right: Box<Value>,
     },
 }
 

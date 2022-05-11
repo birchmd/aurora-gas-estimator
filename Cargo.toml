@@ -12,7 +12,14 @@ aurora-engine-transactions = { path = "./aurora-engine/engine-transactions/", fe
 aurora-engine-types = { path = "./aurora-engine/engine-types/", features = ["std"] }
 borsh = "0.8.2"
 clap = { version = "3.1.6", features = ["derive"] }
+ethabi = { git = "https://github.com/darwinia-network/ethabi", branch = "xavier-no-std" }
 hex = "0.4.3"
 libsecp256k1 = "0.3.5"
+near-primitives-core = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
+near-primitives = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
+near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
+near-vm-runner = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783", default-features = false, features = [ "wasmer2_vm" ] }
+rand = "0.7.3"
+rlp = "0.5.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

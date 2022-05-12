@@ -11,7 +11,7 @@ mod tests;
 fn main() {
     let args = Cli::parse();
 
-    let program = read_program(&args.program_path).unwrap();
+    let program = read_program(&args.script_path).unwrap();
 
     let finished_runtime = runtime::execute(program).unwrap();
     for string in finished_runtime.print_buffer {
@@ -28,5 +28,5 @@ fn read_program(path: &str) -> Result<program::Program, std::io::Error> {
 #[derive(Parser)]
 pub struct Cli {
     #[clap(short, long)]
-    pub program_path: String,
+    pub script_path: String,
 }

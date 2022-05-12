@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-aurora-engine = { path = "./aurora-engine/engine/", features = ["std"] }
+aurora-engine = { path = "./aurora-engine/engine/", features = ["std", "impl-serde"] }
 aurora-engine-sdk = { path = "./aurora-engine/engine-sdk/", features = ["std"] }
-aurora-engine-transactions = { path = "./aurora-engine/engine-transactions/", features = ["std"] }
-aurora-engine-types = { path = "./aurora-engine/engine-types/", features = ["std"] }
+aurora-engine-transactions = { path = "./aurora-engine/engine-transactions/", features = ["std", "impl-serde"] }
+aurora-engine-types = { path = "./aurora-engine/engine-types/", features = ["std", "impl-serde"] }
 borsh = "0.8.2"
 clap = { version = "3.1.6", features = ["derive"] }
 ethabi = { git = "https://github.com/darwinia-network/ethabi", branch = "xavier-no-std" }

@@ -79,9 +79,9 @@ impl From<&str> for Variable {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct HexString(String);
+pub struct HexString(pub String);
 
 impl HexString {
     pub fn try_to_bytes(&self) -> Result<Vec<u8>, hex::FromHexError> {

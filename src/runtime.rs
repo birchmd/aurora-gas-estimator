@@ -20,14 +20,14 @@ use std::collections::HashMap;
 const EVM_WASM_BYTES: &[u8; 1024938] = include_bytes!("../aurora-engine/mainnet-release.wasm");
 const AURORA_ACCOUNT_ID: &str = "aurora";
 
-pub fn execute(program: Program) -> Result<(), errors::RuntimeError> {
+pub fn execute(program: Program) -> Result<Runtime, errors::RuntimeError> {
     let mut runtime = Runtime::new();
 
     for statement in program.statements {
         execute_statement(statement, &mut runtime)?
     }
 
-    Ok(())
+    Ok(runtime)
 }
 
 pub fn execute_statement(
@@ -54,7 +54,11 @@ pub fn execute_statement(
                 Ok(())
             };
         }
-        _ => todo!(),
+        Statement::Print { value } => {
+            let value = runtime.get_value(value)?;
+            let string = serde_json::to_string_pretty(&value.serializable())?;
+            runtime.print_buffer.push(string);
+        }
     }
 
     Ok(())
@@ -257,6 +261,7 @@ fn parse_u256(hex_str: &HexString) -> Result<U256, hex::FromHexError> {
 pub struct Runtime {
     pub vm: VM,
     pub variables: HashMap<String, Value>,
+    pub print_buffer: Vec<String>,
 }
 
 impl Runtime {
@@ -291,6 +296,7 @@ impl Runtime {
         Self {
             vm: deploy_evm(),
             variables: HashMap::new(),
+            print_buffer: Vec::new(),
         }
     }
 }
@@ -357,9 +363,63 @@ impl Value {
             Self::Bool(_) => ValueType::Bool,
         }
     }
+
+    pub fn serializable(&self) -> SerializableValue {
+        match self {
+            Value::SigningAccount(signer) => SerializableValue::SigningAccount {
+                address: HexString(signer.address().encode()),
+            },
+            Value::Contract {
+                contract,
+                deployment_near_gas_used,
+                deployment_result,
+            } => SerializableValue::DeployedContract {
+                address: HexString(contract.address.encode()),
+                deployment_near_gas_used: *deployment_near_gas_used,
+                deployment_result: deployment_result.clone(),
+            },
+            Value::ContractCallResult {
+                near_gas_used,
+                result,
+            } => SerializableValue::ContractCallResult {
+                near_gas_used: *near_gas_used,
+                result: result.clone(),
+            },
+            Value::U256(number) => {
+                let mut bytes = [0u8; 32];
+                number.to_big_endian(&mut bytes);
+                SerializableValue::U256(HexString(format!("0x{}", hex::encode(bytes))))
+            }
+            Value::Bytes(bytes) => {
+                SerializableValue::Bytes(HexString(format!("0x{}", hex::encode(bytes))))
+            }
+            Value::String(s) => SerializableValue::String(s.clone()),
+            Value::Bool(b) => SerializableValue::Bool(*b),
+        }
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub enum SerializableValue {
+    SigningAccount {
+        address: HexString,
+    },
+    DeployedContract {
+        address: HexString,
+        deployment_near_gas_used: u64,
+        deployment_result: SubmitResult,
+    },
+    ContractCallResult {
+        near_gas_used: u64,
+        result: SubmitResult,
+    },
+    U256(HexString),
+    Bytes(HexString),
+    String(String),
+    Bool(bool),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValueType {
     SigningAccount,
     DeployedContract,

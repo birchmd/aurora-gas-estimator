@@ -34,6 +34,7 @@ pub enum RuntimeError {
         left: Box<Value>,
         right: Box<Value>,
     },
+    Serialize(serde_json::Error),
 }
 
 impl From<hex::FromHexError> for TokenParseError {
@@ -93,5 +94,11 @@ impl From<VMError> for RuntimeError {
 impl From<secp256k1::Error> for RuntimeError {
     fn from(e: secp256k1::Error) -> Self {
         Self::Secp256k1(e)
+    }
+}
+
+impl From<serde_json::Error> for RuntimeError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::Serialize(e)
     }
 }

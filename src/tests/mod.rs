@@ -163,3 +163,36 @@ fn test_eth_transfer() {
 
     runtime::execute(Program { statements }).unwrap();
 }
+
+#[test]
+fn test_print() {
+    let statements = vec![
+        Statement::Assign {
+            name: "my_account".into(),
+            expression: Expression::CreateAccount {
+                initial_balance: "0x00".into(),
+                secret_key: Some(
+                    "0xbeef000000000000000000000000000000000000000000000000000000000000".into(),
+                ),
+                initial_nonce: None,
+            },
+        },
+        Statement::Print {
+            value: "my_account".into(),
+        },
+    ];
+
+    let finished_runtime = runtime::execute(Program { statements }).unwrap();
+    let printed_string = finished_runtime.print_buffer.first().unwrap();
+    let expected_string = r#"
+        {
+            "SigningAccount": {
+                "address": "abd0b104ffbe72538503e886e367b7b15dcba1c5"
+            }
+        }
+    "#;
+    assert_eq!(
+        printed_string.replace(" ", "").trim(),
+        expected_string.replace(" ", "").trim()
+    )
+}

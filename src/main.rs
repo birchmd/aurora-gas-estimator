@@ -13,7 +13,10 @@ fn main() {
 
     let program = read_program(&args.program_path).unwrap();
 
-    runtime::execute(program).unwrap();
+    let finished_runtime = runtime::execute(program).unwrap();
+    for string in finished_runtime.print_buffer {
+        println!("{}", string);
+    }
 }
 
 fn read_program(path: &str) -> Result<program::Program, std::io::Error> {

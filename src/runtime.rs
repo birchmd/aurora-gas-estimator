@@ -56,8 +56,8 @@ pub fn execute_statement(
         }
         Statement::Print { value } => {
             let value = runtime.get_value(value)?;
-            let string = serde_json::to_string_pretty(&value.serializable())?;
-            runtime.print_buffer.push(string);
+            let serialized = serde_json::to_value(&value.serializable())?;
+            runtime.print_buffer.push(serialized);
         }
     }
 
@@ -261,7 +261,7 @@ fn parse_u256(hex_str: &HexString) -> Result<U256, hex::FromHexError> {
 pub struct Runtime {
     pub vm: VM,
     pub variables: HashMap<String, Value>,
-    pub print_buffer: Vec<String>,
+    pub print_buffer: Vec<serde_json::Value>,
 }
 
 impl Runtime {

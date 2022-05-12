@@ -183,7 +183,8 @@ fn test_print() {
     ];
 
     let finished_runtime = runtime::execute(Program { statements }).unwrap();
-    let printed_string = finished_runtime.print_buffer.first().unwrap();
+    let printed_string =
+        serde_json::to_string_pretty(finished_runtime.print_buffer.first().unwrap()).unwrap();
     let expected_string = r#"
         {
             "SigningAccount": {

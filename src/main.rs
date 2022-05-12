@@ -14,9 +14,10 @@ fn main() {
     let program = read_program(&args.script_path).unwrap();
 
     let finished_runtime = runtime::execute(program).unwrap();
-    for string in finished_runtime.print_buffer {
-        println!("{}", string);
-    }
+    let output = Output {
+        output: finished_runtime.print_buffer,
+    };
+    println!("{}", serde_json::to_string_pretty(&output).unwrap());
 }
 
 fn read_program(path: &str) -> Result<program::Program, std::io::Error> {
@@ -26,7 +27,12 @@ fn read_program(path: &str) -> Result<program::Program, std::io::Error> {
 }
 
 #[derive(Parser)]
-pub struct Cli {
+struct Cli {
     #[clap(short, long)]
-    pub script_path: String,
+    script_path: String,
+}
+
+#[derive(serde::Serialize)]
+struct Output {
+    output: Vec<serde_json::Value>,
 }

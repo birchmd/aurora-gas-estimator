@@ -547,7 +547,8 @@ impl Default for VM {
 
         let runtime_config_store = RuntimeConfigStore::new(None);
         let runtime_config = runtime_config_store.get_config(PROTOCOL_VERSION);
-        let wasm_config = runtime_config.wasm_config.clone();
+        let mut wasm_config = runtime_config.wasm_config.clone();
+        wasm_config.limit_config.max_gas_burnt = u64::MAX;
 
         Self {
             aurora_account_id,

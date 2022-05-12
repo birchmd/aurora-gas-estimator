@@ -123,7 +123,7 @@ pub fn execute_expression(
                     for arg in args {
                         abi_args.push(arg.try_into()?)
                     }
-                    constructor.deploy_with_args(nonce, &abi_args)
+                    constructor.deploy_with_args(nonce, &abi_args)?
                 }
             };
             if let Some(value) = value {
@@ -182,13 +182,13 @@ pub fn execute_expression(
                         CallContractData::SolidityMethod { name, args } => {
                             let contract = get_contract(&runtime.variables, contract)?;
                             match args {
-                                None => contract.call_method_without_args(&name, nonce),
+                                None => contract.call_method_without_args(&name, nonce)?,
                                 Some(args) => {
                                     let mut abi_args = Vec::new();
                                     for arg in args {
                                         abi_args.push(arg.try_into()?)
                                     }
-                                    contract.call_method_with_args(&name, &abi_args, nonce)
+                                    contract.call_method_with_args(&name, &abi_args, nonce)?
                                 }
                             }
                         }

@@ -35,6 +35,7 @@ pub enum RuntimeError {
         right: Box<Value>,
     },
     Serialize(serde_json::Error),
+    EthABI(ethabi::Error),
 }
 
 impl From<hex::FromHexError> for TokenParseError {
@@ -100,5 +101,11 @@ impl From<secp256k1::Error> for RuntimeError {
 impl From<serde_json::Error> for RuntimeError {
     fn from(e: serde_json::Error) -> Self {
         Self::Serialize(e)
+    }
+}
+
+impl From<ethabi::Error> for RuntimeError {
+    fn from(e: ethabi::Error) -> Self {
+        Self::EthABI(e)
     }
 }

@@ -188,7 +188,7 @@ fn test_print() {
     let expected_string = r#"
         {
             "SigningAccount": {
-                "address": "abd0b104ffbe72538503e886e367b7b15dcba1c5"
+                "address": "0xabd0b104ffbe72538503e886e367b7b15dcba1c5"
             }
         }
     "#;

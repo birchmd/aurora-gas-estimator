@@ -1,0 +1,192 @@
+{
+  "statements": [
+    {
+      "Assign": {
+        "name": "my_account",
+        "expression": {
+          "CreateAccount": {
+            "initial_balance": "0x00",
+            "secret_key": "0xbeef000000000000000000000000000000000000000000000000000000000000",
+            "initial_nonce": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "my_erc20",
+        "expression": {
+          "DeployContract": {
+            "contract": {
+              "WithABI": {
+                "abi_path": "src/tests/res/ERC20PresetMinterPauser.abi",
+                "compiled_contract_path": "src/tests/res/ERC20PresetMinterPauser.bin"
+              }
+            },
+            "signing_account": "my_account",
+            "constructor_args": [
+              {
+                "String": "TOKEN_A"
+              },
+              {
+                "String": "AAA"
+              }
+            ],
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "mint_call",
+        "expression": {
+          "CallContract": {
+            "contract": "my_erc20",
+            "signing_account": "my_account",
+            "data": {
+              "SolidityMethod": {
+                "name": "mint",
+                "args": [
+                  {
+                    "Address": "0xabd0b104ffbe72538503e886e367b7b15dcba1c5"
+                  },
+                  {
+                    "Uint": "0xffffffff"
+                  }
+                ]
+              }
+            },
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "transfer_call",
+        "expression": {
+          "CallContract": {
+            "contract": "my_erc20",
+            "signing_account": "my_account",
+            "data": {
+              "SolidityMethod": {
+                "name": "transfer",
+                "args": [
+                  {
+                    "Address": "0x000000000000000000beef000000000000000000"
+                  },
+                  {
+                    "Uint": "0xffff0000"
+                  }
+                ]
+              }
+            },
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "owner_balance_call",
+        "expression": {
+          "CallContract": {
+            "contract": "my_erc20",
+            "signing_account": "my_account",
+            "data": {
+              "SolidityMethod": {
+                "name": "balanceOf",
+                "args": [
+                  {
+                    "Address": "0xabd0b104ffbe72538503e886e367b7b15dcba1c5"
+                  }
+                ]
+              }
+            },
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "recipient_balance_call",
+        "expression": {
+          "CallContract": {
+            "contract": "my_erc20",
+            "signing_account": "my_account",
+            "data": {
+              "SolidityMethod": {
+                "name": "balanceOf",
+                "args": [
+                  {
+                    "Address": "0x000000000000000000beef000000000000000000"
+                  }
+                ]
+              }
+            },
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "owner_expected_balance",
+        "expression": {
+          "Primitive": {
+            "Bytes": "0x000000000000000000000000000000000000000000000000000000000000ffff"
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "owner_actual_balance",
+        "expression": {
+          "GetOutput": {
+            "contract_call": "owner_balance_call"
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "recipient_expected_balance",
+        "expression": {
+          "Primitive": {
+            "Bytes": "0x00000000000000000000000000000000000000000000000000000000ffff0000"
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "recipient_actual_balance",
+        "expression": {
+          "GetOutput": {
+            "contract_call": "recipient_balance_call"
+          }
+        }
+      }
+    },
+    {
+      "AssertEq": {
+        "left": "owner_expected_balance",
+        "right": "owner_actual_balance"
+      }
+    },
+    {
+      "AssertEq": {
+        "left": "recipient_expected_balance",
+        "right": "recipient_actual_balance"
+      }
+    },
+    {
+      "Print": {
+        "value": "transfer_call"
+      }
+    }
+  ]
+}

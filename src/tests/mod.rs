@@ -197,3 +197,126 @@ fn test_print() {
         expected_string.replace(" ", "").trim()
     )
 }
+
+#[test]
+fn test_erc20() {
+    let statements = vec![
+        Statement::Assign {
+            name: "my_account".into(),
+            expression: Expression::CreateAccount {
+                initial_balance: "0x00".into(),
+                secret_key: Some(
+                    "0xbeef000000000000000000000000000000000000000000000000000000000000".into(),
+                ),
+                initial_nonce: None,
+            },
+        },
+        Statement::Assign {
+            name: "my_erc20".into(),
+            expression: Expression::DeployContract {
+                contract: DeployContractData::WithABI {
+                    abi_path: "src/tests/res/ERC20PresetMinterPauser.abi".into(),
+                    compiled_contract_path: "src/tests/res/ERC20PresetMinterPauser.bin".into(),
+                },
+                signing_account: "my_account".into(),
+                constructor_args: Some(vec![
+                    EthABIToken::String("TOKEN_A".into()),
+                    EthABIToken::String("AAA".into()),
+                ]),
+                value: None,
+            },
+        },
+        Statement::Assign {
+            name: "mint_call".into(),
+            expression: Expression::CallContract {
+                contract: "my_erc20".into(),
+                signing_account: "my_account".into(),
+                data: Some(CallContractData::SolidityMethod {
+                    name: "mint".into(),
+                    args: Some(vec![
+                        EthABIToken::Address("0xabd0b104ffbe72538503e886e367b7b15dcba1c5".into()),
+                        EthABIToken::Uint("0xffffffff".into()),
+                    ]),
+                }),
+                value: None,
+            },
+        },
+        Statement::Assign {
+            name: "transfer_call".into(),
+            expression: Expression::CallContract {
+                contract: "my_erc20".into(),
+                signing_account: "my_account".into(),
+                data: Some(CallContractData::SolidityMethod {
+                    name: "transfer".into(),
+                    args: Some(vec![
+                        EthABIToken::Address("0x000000000000000000beef000000000000000000".into()),
+                        EthABIToken::Uint("0xffff0000".into()),
+                    ]),
+                }),
+                value: None,
+            },
+        },
+        Statement::Assign {
+            name: "owner_balance_call".into(),
+            expression: Expression::CallContract {
+                contract: "my_erc20".into(),
+                signing_account: "my_account".into(),
+                data: Some(CallContractData::SolidityMethod {
+                    name: "balanceOf".into(),
+                    args: Some(vec![EthABIToken::Address(
+                        "0xabd0b104ffbe72538503e886e367b7b15dcba1c5".into(),
+                    )]),
+                }),
+                value: None,
+            },
+        },
+        Statement::Assign {
+            name: "recipient_balance_call".into(),
+            expression: Expression::CallContract {
+                contract: "my_erc20".into(),
+                signing_account: "my_account".into(),
+                data: Some(CallContractData::SolidityMethod {
+                    name: "balanceOf".into(),
+                    args: Some(vec![EthABIToken::Address(
+                        "0x000000000000000000beef000000000000000000".into(),
+                    )]),
+                }),
+                value: None,
+            },
+        },
+        Statement::Assign {
+            name: "owner_expected_balance".into(),
+            expression: Expression::Primitive(Primitive::Bytes(
+                "0x000000000000000000000000000000000000000000000000000000000000ffff".into(),
+            )),
+        },
+        Statement::Assign {
+            name: "owner_actual_balance".into(),
+            expression: Expression::GetOutput {
+                contract_call: "owner_balance_call".into(),
+            },
+        },
+        Statement::Assign {
+            name: "recipient_expected_balance".into(),
+            expression: Expression::Primitive(Primitive::Bytes(
+                "0x00000000000000000000000000000000000000000000000000000000ffff0000".into(),
+            )),
+        },
+        Statement::Assign {
+            name: "recipient_actual_balance".into(),
+            expression: Expression::GetOutput {
+                contract_call: "recipient_balance_call".into(),
+            },
+        },
+        Statement::AssertEq {
+            left: "owner_expected_balance".into(),
+            right: "owner_actual_balance".into(),
+        },
+        Statement::AssertEq {
+            left: "recipient_expected_balance".into(),
+            right: "recipient_actual_balance".into(),
+        },
+    ];
+
+    runtime::execute(Program { statements }).unwrap();
+}

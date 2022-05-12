@@ -47,8 +47,8 @@ pub fn execute_statement(
             let right = runtime.get_value(right)?;
             return if left != right {
                 Err(errors::RuntimeError::AssertEqFailed {
-                    left: Box::new(left),
-                    right: Box::new(right),
+                    left: Box::new(left.clone()),
+                    right: Box::new(right.clone()),
                 })
             } else {
                 Ok(())
@@ -199,26 +199,14 @@ pub fn execute_expression(
             })
         }
         Expression::GetCode { address } => {
-            let value = runtime.get_value(address)?;
-            let address = match value {
-                Value::Contract { contract, .. } => contract.address,
-                Value::SigningAccount(signer) => signer.address(),
-                Value::Bytes(bytes) => Address::try_from_slice(&bytes)
-                    .map_err(|_| errors::TokenParseError::InvalidAddress)?,
-                other => {
-                    return Err(errors::RuntimeError::TypeMismatch {
-                        expected: ValueType::Bytes,
-                        received: other.typ(),
-                    });
-                }
-            };
+            let address = runtime.get_address(address)?;
             let bytes = runtime.vm.getter_method_call("get_code", address)?;
             Ok(Value::Bytes(bytes))
         }
         Expression::GetOutput { contract_call } => {
             let value = runtime.get_value(contract_call)?;
             match value {
-                Value::ContractCallResult { result, .. } => match result.status {
+                Value::ContractCallResult { result, .. } => match result.status.clone() {
                     aurora_engine::parameters::TransactionStatus::Succeed(bytes) => {
                         Ok(Value::Bytes(bytes))
                     }
@@ -241,7 +229,7 @@ pub fn execute_expression(
                 let bytes = x.try_to_bytes()?;
                 Ok(Value::Bytes(bytes))
             }
-            program::Primitive::Variable(v) => runtime.get_value(v),
+            program::Primitive::Variable(v) => runtime.get_value(v).cloned(),
         },
         _ => todo!(),
     }
@@ -258,12 +246,29 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn get_value(&self, v: Variable) -> Result<Value, errors::RuntimeError> {
+    pub fn get_value(&self, v: Variable) -> Result<&Value, errors::RuntimeError> {
         let value = self
             .variables
             .get(&v.0)
             .ok_or(errors::RuntimeError::UnknownVariable(v))?;
-        Ok(value.clone())
+        Ok(value)
+    }
+
+    pub fn get_address(&self, v: Variable) -> Result<Address, errors::RuntimeError> {
+        let value = self.get_value(v)?;
+        let address = match value {
+            Value::Contract { contract, .. } => contract.address,
+            Value::SigningAccount(signer) => signer.address(),
+            Value::Bytes(bytes) => Address::try_from_slice(bytes)
+                .map_err(|_| errors::TokenParseError::InvalidAddress)?,
+            other => {
+                return Err(errors::RuntimeError::TypeMismatch {
+                    expected: ValueType::Bytes,
+                    received: other.typ(),
+                });
+            }
+        };
+        Ok(address)
     }
 }
 

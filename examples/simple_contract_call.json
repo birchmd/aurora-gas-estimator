@@ -1,0 +1,83 @@
+{
+  "statements": [
+    {
+      "Assign": {
+        "name": "my_account",
+        "expression": {
+          "CreateAccount": {
+            "initial_balance": "0x00",
+            "secret_key": null,
+            "initial_nonce": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "my_contract",
+        "expression": {
+          "DeployContract": {
+            "contract": {
+              "Raw": {
+                "evm_bytes": "0x608060405234801561001057600080fd5b50610021806100206000396000f300608060405234801561001057600080fd5b50610001806100206000396000f30000"
+              }
+            },
+            "signing_account": "my_account",
+            "constructor_args": null,
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "my_call",
+        "expression": {
+          "CallContract": {
+            "contract": "my_contract",
+            "signing_account": "my_account",
+            "data": null,
+            "value": null
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "expected_bytes",
+        "expression": {
+          "Primitive": {
+            "Bytes": "0x00"
+          }
+        }
+      }
+    },
+    {
+      "Assign": {
+        "name": "actual_bytes",
+        "expression": {
+          "GetOutput": {
+            "contract_call": "my_call"
+          }
+        }
+      }
+    },
+    {
+      "AssertEq": {
+        "left": "expected_bytes",
+        "right": "actual_bytes"
+      }
+    },
+    {
+      "Print": {
+        "value": "my_contract"
+      }
+    },
+    {
+      "Print": {
+        "value": "my_call"
+      }
+    }
+  ]
+}
+

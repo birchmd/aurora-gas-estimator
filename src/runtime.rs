@@ -159,12 +159,12 @@ pub fn execute_expression(
                 Some(value_hex) => parse_u256(&value_hex)?,
             };
             let transaction = {
-                let contract = get_contract(&runtime.variables, contract)?;
+                let address = runtime.get_address(contract.clone())?;
                 let mut tx_template = TransactionLegacy {
                     nonce,
                     gas_price: U256::zero(),
                     gas_limit: u64::MAX.into(),
-                    to: Some(contract.address),
+                    to: Some(address),
                     value: Wei::new(value),
                     data: Vec::new(),
                 };
@@ -175,16 +175,19 @@ pub fn execute_expression(
                             tx_template.data = data_hex.try_to_bytes()?;
                             tx_template
                         }
-                        CallContractData::SolidityMethod { name, args } => match args {
-                            None => contract.call_method_without_args(&name, nonce),
-                            Some(args) => {
-                                let mut abi_args = Vec::new();
-                                for arg in args {
-                                    abi_args.push(arg.try_into()?)
+                        CallContractData::SolidityMethod { name, args } => {
+                            let contract = get_contract(&runtime.variables, contract)?;
+                            match args {
+                                None => contract.call_method_without_args(&name, nonce),
+                                Some(args) => {
+                                    let mut abi_args = Vec::new();
+                                    for arg in args {
+                                        abi_args.push(arg.try_into()?)
+                                    }
+                                    contract.call_method_with_args(&name, &abi_args, nonce)
                                 }
-                                contract.call_method_with_args(&name, &abi_args, nonce)
                             }
-                        },
+                        }
                     },
                 }
             };
@@ -197,6 +200,18 @@ pub fn execute_expression(
                 near_gas_used: profile.all_gas(),
                 result,
             })
+        }
+        Expression::GetBalance { address } => {
+            let address = runtime.get_address(address)?;
+            let bytes = runtime.vm.getter_method_call("get_balance", address)?;
+            let number = U256::from_big_endian(&bytes);
+            Ok(Value::U256(number))
+        }
+        Expression::GetNonce { address } => {
+            let address = runtime.get_address(address)?;
+            let bytes = runtime.vm.getter_method_call("get_nonce", address)?;
+            let number = U256::from_big_endian(&bytes);
+            Ok(Value::U256(number))
         }
         Expression::GetCode { address } => {
             let address = runtime.get_address(address)?;
@@ -231,7 +246,6 @@ pub fn execute_expression(
             }
             program::Primitive::Variable(v) => runtime.get_value(v).cloned(),
         },
-        _ => todo!(),
     }
 }
 

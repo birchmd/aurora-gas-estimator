@@ -90,3 +90,76 @@ fn test_call_contract() {
 
     runtime::execute(Program { statements }).unwrap();
 }
+
+#[test]
+fn test_eth_transfer() {
+    let statements = vec![
+        Statement::Assign {
+            name: "source".into(),
+            expression: Expression::CreateAccount {
+                initial_balance: "0xffffffff".into(),
+                secret_key: None,
+                initial_nonce: None,
+            },
+        },
+        Statement::Assign {
+            name: "dest".into(),
+            expression: Expression::Primitive(Primitive::Bytes(
+                "0x000000000000000000beef000000000000000000".into(),
+            )),
+        },
+        Statement::Assign {
+            name: "transfer".into(),
+            expression: Expression::CallContract {
+                contract: "dest".into(),
+                signing_account: "source".into(),
+                data: None,
+                value: Some("0x00000fff".into()),
+            },
+        },
+        Statement::Assign {
+            name: "source_expected_balance".into(),
+            expression: Expression::Primitive(Primitive::U256("0xfffff000".into())),
+        },
+        Statement::Assign {
+            name: "source_actual_balance".into(),
+            expression: Expression::GetBalance {
+                address: "source".into(),
+            },
+        },
+        Statement::AssertEq {
+            left: "source_expected_balance".into(),
+            right: "source_actual_balance".into(),
+        },
+        Statement::Assign {
+            name: "source_expected_nonce".into(),
+            expression: Expression::Primitive(Primitive::U256("0x01".into())),
+        },
+        Statement::Assign {
+            name: "source_actual_nonce".into(),
+            expression: Expression::GetNonce {
+                address: "source".into(),
+            },
+        },
+        Statement::AssertEq {
+            left: "source_expected_nonce".into(),
+            right: "source_actual_nonce".into(),
+        },
+        Statement::Assign {
+            name: "dest_expected_balance".into(),
+            expression: Expression::Primitive(Primitive::U256("0x00000fff".into())),
+        },
+        Statement::Assign {
+            name: "dest_actual_balance".into(),
+            expression: Expression::GetBalance {
+                address: "dest".into(),
+            },
+        },
+        Statement::AssertEq {
+            left: "dest_expected_balance".into(),
+            right: "dest_actual_balance".into(),
+        },
+    ];
+
+    runtime::execute(Program { statements }).unwrap();
+}

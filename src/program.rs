@@ -12,7 +12,7 @@ pub struct Program {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Statement {
     Assign {
-        name: String,
+        name: Variable,
         expression: Expression,
     },
     AssertEq {

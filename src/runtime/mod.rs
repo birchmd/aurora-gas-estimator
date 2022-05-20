@@ -29,6 +29,7 @@ pub fn execute_statement(
     match statement {
         Statement::Assign { name, expression } => {
             let value = execute_expression(expression, runtime)?;
+            let name = name.0;
             if runtime.variables.contains_key(&name) {
                 println!("WARN: overwriting variable {}", name);
             }

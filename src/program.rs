@@ -4,12 +4,12 @@ use crate::errors;
 use aurora_engine_types::{H160, U256};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Program {
     pub statements: Vec<Statement>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Statement {
     Assign {
         name: Variable,
@@ -26,7 +26,7 @@ pub enum Statement {
 
 // Expression to pull data from live network maybe? (eg replay deploy txs, download contract data)
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Expression {
     CreateAccount {
         initial_balance: HexString,
@@ -60,7 +60,7 @@ pub enum Expression {
     Primitive(Primitive),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Primitive {
     Variable(Variable),
     U256(HexString),
@@ -69,7 +69,7 @@ pub enum Primitive {
     Bool(bool),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(transparent)]
 pub struct Variable(pub String);
 
@@ -96,7 +96,7 @@ impl From<&str> for HexString {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EthABIToken {
     Address(HexString),
     FixedBytes(HexString),
@@ -158,7 +158,7 @@ impl TryFrom<EthABIToken> for ethabi::Token {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DeployContractData {
     ExtJson {
         extended_json_path: String,
@@ -172,7 +172,7 @@ pub enum DeployContractData {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CallContractData {
     Raw(HexString),
     SolidityMethod {

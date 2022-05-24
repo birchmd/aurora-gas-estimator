@@ -192,6 +192,7 @@ dependencies = [
  "near-primitives-core",
  "near-vm-logic",
  "near-vm-runner",
+ "nom",
  "rand 0.7.3",
  "rlp",
  "serde",
@@ -1304,6 +1305,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "miniz_oxide"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1453,8 +1460,8 @@ dependencies = [
  "near-vm-errors",
  "ripemd160",
  "serde",
- "sha2 0.8.2",
- "sha3 0.8.2",
+ "sha2 0.9.9",
+ "sha3 0.9.1",
 ]
 
 [[package]]
@@ -1484,6 +1491,16 @@ dependencies = [
  "wasmer-types-near",
  "wasmer-vm-near",
  "wasmparser",
+]
+
+[[package]]
+name = "nom"
+version = "7.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
 ]
 
 [[package]]

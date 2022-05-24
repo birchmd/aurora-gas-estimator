@@ -88,7 +88,27 @@ fn test_call_contract() {
         },
     ];
 
-    runtime::execute(Program { statements }).unwrap();
+    let text_program = r#"
+        let my_account = create_account(initial_balance=0x00)
+        let my_contract = deploy_contract(
+            contract=raw(0x608060405234801561001057600080fd5b50610021806100206000396000f300608060405234801561001057600080fd5b50610001806100206000396000f30000)
+            signer=my_account
+        )
+        let my_call = call_contract(
+            contract=my_contract,
+            signer=my_account,
+        )
+        let expected_bytes = primitive(bytes(0x00))
+        let actual_bytes = get_output(my_call)
+        assert_eq(expected_bytes, actual_bytes)
+    "#;
+    let program = Program { statements };
+
+    assert_eq!(
+        program,
+        crate::parser::parse_program(&text_program).unwrap()
+    );
+    runtime::execute(program).unwrap();
 }
 
 #[test]
@@ -161,7 +181,34 @@ fn test_eth_transfer() {
         },
     ];
 
-    runtime::execute(Program { statements }).unwrap();
+    let text_program = r#"
+        let source = create_account(initial_balance=0xffffffff)
+        let dest = primitive(bytes(0x000000000000000000beef000000000000000000))
+        let transfer = call_contract(
+            contract=dest,
+            signer=source,
+            value=0x00000fff,
+        )
+
+        let source_expected_balance = primitive(uint(0xfffff000))
+        let source_actual_balance = get_balance(source)
+        assert_eq(source_expected_balance, source_actual_balance)
+
+        let source_expected_nonce = primitive(uint(0x01))
+        let source_actual_nonce = get_nonce(source)
+        assert_eq(source_expected_nonce, source_actual_nonce)
+
+        let dest_expected_balance = primitive(uint(0x00000fff))
+        let dest_actual_balance = get_balance(dest)
+        assert_eq(dest_expected_balance, dest_actual_balance)
+    "#;
+    let program = Program { statements };
+
+    assert_eq!(
+        program,
+        crate::parser::parse_program(&text_program).unwrap()
+    );
+    runtime::execute(program).unwrap();
 }
 
 #[test]
@@ -318,5 +365,63 @@ fn test_erc20() {
         },
     ];
 
-    runtime::execute(Program { statements }).unwrap();
+    let text_program = r#"
+        let my_account = create_account(
+            initial_balance=0x00,
+            secret_key=0xbeef000000000000000000000000000000000000000000000000000000000000,
+        )
+        let my_erc20 = deploy_contract(
+            contract=abi_bin(
+                abi_path=src/tests/res/ERC20PresetMinterPauser.abi,
+                bin_path=src/tests/res/ERC20PresetMinterPauser.bin,
+            ),
+            signer=my_account,
+            constructor_args=("TOKEN_A", "AAA"),
+        )
+        let mint_call = call_contract(
+            contract=my_erc20,
+            signer=my_account,
+            data=solidity(
+                method=mint,
+                args=(address(0xabd0b104ffbe72538503e886e367b7b15dcba1c5), uint(0xffffffff))
+            )
+        )
+        let transfer_call = call_contract(
+            contract=my_erc20,
+            signer=my_account,
+            data=solidity(
+                method=transfer,
+                args=(address(0x000000000000000000beef000000000000000000), uint(0xffff0000))
+            )
+        )
+        let owner_balance_call = call_contract(
+            contract=my_erc20,
+            signer=my_account,
+            data=solidity(
+                method=balanceOf,
+                args=(address(0xabd0b104ffbe72538503e886e367b7b15dcba1c5))
+            )
+        )
+        let recipient_balance_call = call_contract(
+            contract=my_erc20,
+            signer=my_account,
+            data=solidity(
+                method=balanceOf,
+                args=(address(0x000000000000000000beef000000000000000000))
+            )
+        )
+        let owner_expected_balance = primitive(bytes(0x000000000000000000000000000000000000000000000000000000000000ffff))
+        let owner_actual_balance = get_output(owner_balance_call)
+        let recipient_expected_balance = primitive(bytes(0x00000000000000000000000000000000000000000000000000000000ffff0000))
+        let recipient_actual_balance = get_output(recipient_balance_call)
+        assert_eq(owner_expected_balance, owner_actual_balance)
+        assert_eq(recipient_expected_balance, recipient_actual_balance)
+    "#;
+    let program = Program { statements };
+
+    assert_eq!(
+        program,
+        crate::parser::parse_program(&text_program).unwrap()
+    );
+    runtime::execute(program).unwrap();
 }

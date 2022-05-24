@@ -1,0 +1,14 @@
+let my_account = create_account(initial_balance=0x00)
+let my_contract = deploy_contract(
+    contract=raw(0x608060405234801561001057600080fd5b50610021806100206000396000f300608060405234801561001057600080fd5b50610001806100206000396000f30000),
+    signer=my_account
+)
+let my_call = call_contract(
+    contract=my_contract,
+    signer=my_account,
+)
+let expected_bytes = primitive(bytes(0x00))
+let actual_bytes = get_output(my_call)
+assert_eq(expected_bytes, actual_bytes)
+print(my_contract)
+print(my_call)

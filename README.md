@@ -35,13 +35,13 @@ Simply divide the return value by 10^12 to convert it into Tgas.
 For example:
 
 ```
-aurora-gas-estimator -s examples/simple_contract_call.json | jq '.output[0].DeployedContract.deployment_near_gas_used'
-aurora-gas-estimator -s examples/simple_contract_call.json | jq '.output[1].ContractCallResult.near_gas_used'
+aurora-gas-estimator -s examples/simple_contract_call.script | jq '.output[0].DeployedContract.deployment_near_gas_used'
+aurora-gas-estimator -s examples/simple_contract_call.script | jq '.output[1].ContractCallResult.near_gas_used'
 ```
 
 The amount of EVM gas burned is also available in the `result` object under the `gas_used` field.
 
 ```
-aurora-gas-estimator -s examples/simple_contract_call.json | jq '.output[0].DeployedContract.deployment_result.gas_used'
-aurora-gas-estimator -s examples/simple_contract_call.json | jq '.output[1].ContractCallResult.result.gas_used'
+aurora-gas-estimator -s examples/simple_contract_call.script | jq '.output[0].DeployedContract.deployment_result.gas_used'
+aurora-gas-estimator -s examples/simple_contract_call.script | jq '.output[1].ContractCallResult.result.gas_used'
 ```

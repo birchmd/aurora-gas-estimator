@@ -19,6 +19,7 @@ near-primitives-core = { git = "https://github.com/near/nearcore.git", rev = "83
 near-primitives = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
 near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
 near-vm-runner = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783", default-features = false, features = [ "wasmer2_vm" ] }
+nom = "7.1.1"
 rand = "0.7.3"
 rlp = "0.5.0"
 serde = { version = "1", features = ["derive"] }

@@ -1,0 +1,51 @@
+let my_account = create_account(
+    initial_balance=0x00,
+    secret_key=0xbeef000000000000000000000000000000000000000000000000000000000000,
+)
+let my_erc20 = deploy_contract(
+    contract=abi_bin(
+        abi_path=src/tests/res/ERC20PresetMinterPauser.abi,
+        bin_path=src/tests/res/ERC20PresetMinterPauser.bin,
+    ),
+    signer=my_account,
+    constructor_args=("TOKEN_A", "AAA"),
+)
+let mint_call = call_contract(
+    contract=my_erc20,
+    signer=my_account,
+    data=solidity(
+        method=mint,
+        args=(address(0xabd0b104ffbe72538503e886e367b7b15dcba1c5), uint(0xffffffff))
+    )
+)
+let transfer_call = call_contract(
+    contract=my_erc20,
+    signer=my_account,
+    data=solidity(
+        method=transfer,
+        args=(address(0x000000000000000000beef000000000000000000), uint(0xffff0000))
+    )
+)
+let owner_balance_call = call_contract(
+    contract=my_erc20,
+    signer=my_account,
+    data=solidity(
+        method=balanceOf,
+        args=(address(0xabd0b104ffbe72538503e886e367b7b15dcba1c5))
+    )
+)
+let recipient_balance_call = call_contract(
+    contract=my_erc20,
+    signer=my_account,
+    data=solidity(
+        method=balanceOf,
+        args=(address(0x000000000000000000beef000000000000000000))
+    )
+)
+let owner_expected_balance = primitive(bytes(0x000000000000000000000000000000000000000000000000000000000000ffff))
+let owner_actual_balance = get_output(owner_balance_call)
+let recipient_expected_balance = primitive(bytes(0x00000000000000000000000000000000000000000000000000000000ffff0000))
+let recipient_actual_balance = get_output(recipient_balance_call)
+assert_eq(owner_expected_balance, owner_actual_balance)
+assert_eq(recipient_expected_balance, recipient_actual_balance)
+print(transfer_call)

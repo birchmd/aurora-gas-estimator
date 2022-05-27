@@ -172,7 +172,7 @@ impl VM {
             input,
         );
 
-        let (maybe_outcome, maybe_error) = near_vm_runner::run(
+        let (maybe_outcome, maybe_error) = match near_vm_runner::run(
             &self.code,
             method_name,
             &mut self.ext,
@@ -182,7 +182,10 @@ impl VM {
             &[],
             self.current_protocol_version,
             Some(&self.cache),
-        );
+        ) {
+            near_vm_runner::VMResult::Aborted(outcome, error) => (Some(outcome), Some(error)),
+            near_vm_runner::VMResult::Ok(outcome) => (Some(outcome), None),
+        };
         if let Some(outcome) = &maybe_outcome {
             self.context.storage_usage = outcome.storage_usage;
         }
@@ -205,7 +208,7 @@ impl VM {
             input,
         );
 
-        near_vm_runner::run(
+        match near_vm_runner::run(
             &self.code,
             method_name,
             &mut ext,
@@ -215,7 +218,10 @@ impl VM {
             &[],
             self.current_protocol_version,
             Some(&self.cache),
-        )
+        ) {
+            near_vm_runner::VMResult::Aborted(outcome, error) => (Some(outcome), Some(error)),
+            near_vm_runner::VMResult::Ok(outcome) => (Some(outcome), None),
+        }
     }
 
     pub fn getter_method_call(

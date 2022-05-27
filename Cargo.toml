@@ -15,10 +15,10 @@ clap = { version = "3.1.6", features = ["derive"] }
 ethabi = { git = "https://github.com/darwinia-network/ethabi", branch = "xavier-no-std" }
 hex = "0.4.3"
 libsecp256k1 = "0.3.5"
-near-primitives-core = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
-near-primitives = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
-near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783" }
-near-vm-runner = { git = "https://github.com/near/nearcore.git", rev = "83fc0f7d6b212bacc49f058e7400743de3e59783", default-features = false, features = [ "wasmer2_vm" ] }
+near-primitives-core = { git = "https://github.com/near/nearcore.git", rev = "39ab20bc8f3832e9f66a098d600ce9b2998e1cd7" }
+near-primitives = { git = "https://github.com/near/nearcore.git", rev = "39ab20bc8f3832e9f66a098d600ce9b2998e1cd7" }
+near-vm-logic = { git = "https://github.com/near/nearcore.git", rev = "39ab20bc8f3832e9f66a098d600ce9b2998e1cd7" }
+near-vm-runner = { git = "https://github.com/near/nearcore.git", rev = "39ab20bc8f3832e9f66a098d600ce9b2998e1cd7", default-features = false, features = [ "wasmer2_vm" ] }
 nom = "7.1.1"
 rand = "0.7.3"
 rlp = "0.5.0"
